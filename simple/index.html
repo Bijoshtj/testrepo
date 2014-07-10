@@ -1,13 +1,74 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="ISO-8859-1">
-<title>Javascript Games</title>
-</head>
-<body>
+<!DOCTYPE html> 
+<html> 
+    <head>
+	
+ 
+        <link rel="stylesheet" href="css/snakeGame.css" /> 
+		<script src="js/jquery-1.11.0.js"></script>
+		<!--script src='gameboard.js'></script--> 
+		<!--script src='snake.js'></script-->
+        <script src='js/snakeGame.js'></script> 
+        <title>Snake Impact</title> 
+    </head> 
+    <body bgcolor="#CCFFFF"> 
+    	<h2>Snake Impact</h2>
+    	
+        <div id='game'> 
+            <div id='gameField'>  
+            </div> 
+            <div id='gameInfo'>
+            	<table>
+	            	<tr>
+	            		<td>Highest score:</td>
+	            		<td id="highestScore">0</td>
+	            	</tr>
+	            	<tr>
+	            		<td>Your score:</td>
+	            		<td id="score">0</td>
+	            	</tr>
+	            	<tr>
+	            		<td>Speed:</td>
+	            		<td id="speed">1</td>
+	            	</tr>
+	            	<tr>
+	            		<td>Bonus:</td>
+	            		<td id="bonus">0</td>
+	            	</tr>
+            	</table> 
+            	
+				<!-- <div id='points' style="width:100%;">
+					<div style='width:50%; display: inline-block;'>Highest score:</div>
+					<div id="highestScore" style='width:50%; display: inline-block;'>0</div>
+					<div style='width:50%; display: inline-block;'>Your score:</div>
+					<div id='score' style='width:50%; display: inline-block;'>0</div>
+					<div style='width:50%; display: inline-block;'>Speed:</div>
+					<div id='speed' style='width:50%; display: inline-block;'>1</div>
+					<div style='width:50%; display: inline-block;'>Bonus:</div>
+					<div id='bonus' style='width:50%; display: inline-block;'>0</div>
+				</div> -->
+				<div id='gamemsg' style="margin-top:10px;">
+					<div id="timeRemains">0</div>
+					<div id='nextRndMsg'>Next Round!</div>
+					<div id='loseMsg'>You lose! Try again</div>
+				</div>
+				<div id='rules'>
+					<p>Press Space to start or restart the game</p>
+					<p>Use arrows to move</p>
+					<p>Press Esc to quit</p>
+				</div>
+            </div> 
+        </div> 
+        
+        <div class="instructions" style="clear:both;">
+        	<h3>How To Play!!!</h3>
+        	<ul>
+        		<li><div style="display:inline;">Collect food (green)</div> <div style="background: green;display:inline;height:10px;width:10px;position:absolute;"><img /></div> <div style="margin-left:15px;display:inline;">before timeout of 20 sec to remain in the game</div></li>
+        		<li>Collect 12 foods to increace speed by 1 unit</li>
+        		<li>Collect diamond (blue) <div style="background: blue;display:inline;padding-bottom:0;height:10px;width:10px;position:absolute;"></div> <div style="margin-left:15px;display:inline;">to earn bonus point. Bonus point will be (2xspeed)</div></li>
+        		<li>Collect the orange box <div style="background: orange;display:inline;padding-bottom:0;height:10px;width:10px;position:absolute;"></div> <div style="margin-left:15px;display:inline;"> to remove 3 tail parts of the snake</div></li>
+        	</ul>
+        </div>
 
-<a href="gameOne.html">Game One (Catching the monster)</a><br/>
-<a href="snakeGame.html">Game Two (Snake feeding)</a>
-
-</body>
+          
+    </body> 
 </html>
