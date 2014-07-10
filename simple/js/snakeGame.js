@@ -1,4 +1,13 @@
 //***********MAIN.js**********//
+var timeOut=21;
+function timer(){
+	--timeOut;
+	
+	$("#timeRemains").html(timeOut);
+	if(timeOut<1){		
+		snakeCrashHandler();
+	}
+};
 var gameBoard;
 var snake;
 var moveDirection = 'right';
@@ -10,6 +19,12 @@ var bonusExecuter;
 var bonusTime=15e3;
 var bonusLasting=5e3;
 var bonusInterval=15e3;
+
+var countDownExecuter;
+var cutDownExecuter;
+var cutDownProviderInterval= 15e3;
+var cutDownElementDisp = 5e3;
+var cutDown;
 
 var eatenItemsCount =0;
 var MAX_FOOD_ITEMS = 12;
@@ -50,10 +65,10 @@ $(document).ready(function() {
 
 function bonusProvider(){
 	console.log("inside bonus provider");
-	if(gameExecutor){
+	if(gameExecutor && bonusExecuter){
 		console.log("inside bonus provider if condition");
 		generateBonus();
-		setTimeout(function(){ console.log("inside timeout fn");gameBoard.removeSnakeBonus();}, bonusLasting);
+		setTimeout(function(){ console.log("inside timeout fn");gameBoard.removeSnakeBonus();bonus=null;}, bonusLasting);
 	}
 };
 
@@ -69,14 +84,39 @@ function generateBonus() {
 	}
 };
 
+function cutDownProvider(){
+	console.log("inside cut down snake length provider method");
+	var snakeBody = snake.getBody();
+	if(gameExecutor && cutDownExecuter && snakeBody.length > 5){
+		generateCutDown();
+		setTimeout(function(){ console.log("inside timeout fn");gameBoard.removeSnakeCutDown();cutDown=null;}, cutDownElementDisp);
+	}
+};
+
+function generateCutDown(){
+	var snakeBody = snake.getBody();
+	if(gameBoard.hasNoCreatedCutDown()){
+		console.log("inside if condition to draw cutdown element");
+		do{
+			xpos = Math.floor(Math.random() * gameFieldRelativeWidth) * snakeElementWidth;
+			ypos = Math.floor(Math.random() * gameFieldRelativeHeight)* snakeElementHeight;
+		}
+		while(snake.holdsPosition(xpos,ypos));
+		cutDown = {xPos:xpos,yPos:ypos};
+		gameBoard.drawElement('cutDown',xpos,ypos);
+	}
+};
+
 function move() {
 	generateFood();
 	snake.move(moveDirection);
 	
 	if(snake.holdsPosition(food.xPos,food.yPos))
 		eatFood();
-	else if(bonus && snake.holdsPosition(bonus.xPos,bonus.yPos))
+	if(bonus && snake.holdsPosition(bonus.xPos,bonus.yPos))
 		addBonus();
+	if(cutDown && snake.holdsPosition(cutDown.xPos,cutDown.yPos))
+		processCutDown();
 		
 	drawSnake();
 };
@@ -112,8 +152,9 @@ function startGame() {
 	eatenItemsCount = 0;
 	roundNum = 1;
 	gameSpeed=100;
-	endGame();
+	clearExecutors();
 	
+	timeOut=21;
 	var bonusLasting=5e3;
 	var bonusInterval=15e3;
 	gameBoard.clearGameInfo();
@@ -123,13 +164,29 @@ function startGame() {
 	drawSnake();
 	gameExecutor = setInterval(move,gameSpeed);
 	bonusExecuter = setInterval(bonusProvider, bonusInterval);
+	
+	setTimeout(function(){ 		
+		cutDownExecuter= setInterval(cutDownProvider,  cutDownProviderInterval);
+		}, 5e3);
+	countDownExecuter = setInterval(timer, 1e3);
+	timer();
 };
-function endGame() {
+
+function clearExecutors(){
 	if(gameExecutor)
 		clearInterval(gameExecutor);
 	if(bonusExecuter)
 		clearInterval(bonusExecuter);
-	
+	if(cutDownExecuter)
+		clearInterval(cutDownExecuter);
+	if(countDownExecuter)
+		clearInterval(countDownExecuter);
+};
+
+function endGame() {
+	clearExecutors();
+	gameBoard.showFinalScore();
+	//gameBoard.updateHighestScore();
 	gameBoard.clearBoard();
 };
 
@@ -157,6 +214,7 @@ function generateFood() {
 };
 
 function eatFood() {
+	timeOut=20;
 	snake.eatFood();
 	gameBoard.removeSnakeFood();
 	
@@ -168,13 +226,20 @@ function eatFood() {
 };
 
 function addBonus(){
+	console.log("inside add bonus method");
+	bonus=null;
 	gameBoard.removeSnakeBonus();
-	eatenItemsCount+=2;
+	eatenItemsCount++;
 	if(eatenItemsCount >= MAX_FOOD_ITEMS)
-		startNextRound();
-	
-	gameBoard.updateScore(roundNum);
+		startNextRound();	
+	gameBoard.updateBonus(roundNum);
 };
+
+function processCutDown(){	
+	snake.cutDown();
+	cutDown = null;
+	gameBoard.removeSnakeCutDown();
+}
 
 function snakeCrashHandler() {
 	endGame();
@@ -188,10 +253,11 @@ function startNextRound() {
 	gameSpeed = Math.floor(gameSpeed * 0.8);
 	clearInterval(gameExecutor);
 	gameExecutor = setInterval(move,gameSpeed);
-	/*bonusInterval = Math.floor(bonusInterval * 0.8);
-	bonusLasting = Math.floor(bonusLasting * 0.8);
+	bonusInterval = Math.floor(bonusInterval * 0.8);
+	bonusLasting = bonusInterval/3;
+	if(bonusExecutor)
 	clearInterval(bonusExecutor);
-	gameExecutor = setInterval(bonusProvider, bonusInterval);*/
+	bonusExecutor = setInterval(bonusProvider, bonusInterval);
 };
 //***************************//
 //*********SNAKE.js*********//
@@ -211,6 +277,12 @@ function Snake(startX,startY) {
 	
 	this.eatFood = function() {
 		bodyParts.push(getNewTail());
+	};
+	
+	this.cutDown = function() {
+		bodyParts.pop();
+		bodyParts.pop();
+		bodyParts.pop();
 	};
 	
 	this.move = function(newDirection) {
@@ -243,10 +315,10 @@ function Snake(startX,startY) {
 	
 	this.holdsPositionForBonus = function (xpos,ypos) {
 		for(var i = 0; i< bodyParts.length; i++){
-			if((Math.abs(bodyParts[i].xPos - xpos) <=2)  && (Math.abs(bodyParts[i].yPos - ypos) <=2) )
-				return true;
-			/*if(bodyParts[i].xPos == xpos && bodyParts[i].yPos == ypos)
+			/*if((Math.abs(bodyParts[i].xPos - xpos) <=2)  && (Math.abs(bodyParts[i].yPos - ypos) <=2) )
 				return true;*/
+			if(bodyParts[i].xPos == xpos && bodyParts[i].yPos == ypos)
+				return true;
 		}
 		return false;
 	};
@@ -320,6 +392,9 @@ function Snake(startX,startY) {
 //**************************//
 //*******GAMEBOARD.js******//
 function GameBoard() {
+	
+	this.lastScore=0;	
+	this.highestScore=0;
 
 	this.drawElement = function (classname, xpos,ypos) {
 		var $element = $('<div/>').addClass(classname);
@@ -331,10 +406,13 @@ function GameBoard() {
 		$('div.bodypart').remove();
 		$('.food').remove();
 		$('.bonus').remove();
+		$('.cutDown').remove();
 	};
 	
 	this.clearGameInfo = function() {
 		$('#score').html('0');
+		$('#bonus').html('0');
+		$('#timeRemains').css('visibility','visible');
 		$('#loseMsg').css('visibility','hidden');
 		$('#speed').html('1');
 	};
@@ -345,6 +423,10 @@ function GameBoard() {
 	
 	this.hasNoCreatedBonus = function() {
 		return $('.bonus').length == 0;
+	};
+	
+	this.hasNoCreatedCutDown = function() {
+		return $('.cutDown').length == 0;
 	};
 	
 	this.removeSnakeBody = function() {
@@ -359,10 +441,35 @@ function GameBoard() {
 		$('.bonus').remove();
 	};
 	
+	this.removeSnakeCutDown = function() {
+		$('.cutDown').remove();
+	};
+	
 	this.updateScore = function(currentRound) {
 		var $currentScore = Number($('#score').html());
 		$currentScore+=currentRound;
 		$('#score').html($currentScore);
+	};
+	
+	this.updateBonus = function(currentRound){
+		var $currentBonus = Number($('#bonus').html());
+		$currentBonus+=(currentRound*2);
+		$('#bonus').html($currentBonus);
+	};
+	
+	this.showFinalScore = function (){
+		var $currentScore = Number($('#score').html());
+		$currentScore+= Number($('#bonus').html());
+		$('#score').html($currentScore);
+		this.lastScore= $currentScore;
+		this.updateHighestScore();
+	};
+	
+	this.updateHighestScore = function (){
+		if(this.lastScore > this.highestScore){
+			this.highestScore = this.lastScore;
+			$('#highestScore').html(this.lastScore);
+		}				
 	};
 	
 	this.showLoseMessage = function(){
